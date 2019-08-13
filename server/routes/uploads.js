@@ -2,6 +2,7 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const app = express();
 const Usuario = require('../models/usuario');
+const Producto = require('../models/producto');
 const fs = require('fs');
 const path = require('path');
 
@@ -75,7 +76,12 @@ app.put('/upload/:tipo/:id', function(req, res) {
                         });
 
         // Aqui, imagen cargada
-        imagenUsuario(id, res, nombreArchivo);
+        if(tipo === 'usuarios'){
+            imagenUsuario(id, res, nombreArchivo);
+        }else{
+            imagenProducto(id, res, nombreArchivo);
+        }
+        
         // res.json({
         //     ok: true,
         //     message: 'Archivo cargado correctamente'
@@ -120,8 +126,40 @@ function imagenUsuario(id, res, nombreArchivo){
     })
 }
 
-function imagenProducto(){
-    
+function imagenProducto(id, res, nombreArchivo){
+    Producto.findById(id, (err, productoDB)=>{
+        if(err){
+            deleteArchivo(nombreArchivo, 'productos');
+            return res.status(500).json({
+                ok: false,
+                err
+            })
+        }
+
+        if(!productoDB){
+
+            deleteArchivo(nombreArchivo, 'productos');
+            return res.status(400).json({
+                ok: false,
+                err: {
+                    message: 'Usuario no existe'
+                }
+            })
+        }
+
+        deleteArchivo(productoDB.img, 'productos');
+
+        productoDB.img =  nombreArchivo;
+
+        productoDB.save( (err, productoDB)=> {
+            res.json({
+                ok: true,
+                producto: productoDB,
+                img: nombreArchivo
+            })
+        })
+        
+    })
 }
 
 
